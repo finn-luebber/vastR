@@ -1,0 +1,216 @@
+---
+title: "Getting Started with vastR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with vastR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(vastR)
+```
+
+## What is VAST?
+
+The **Visual Argument Structure Tool** (VAST) was introduced by
+Leising, Grenke, & Cramer (2023) as a system for visually mapping the
+structure of arguments. It distinguishes between:
+
+- **Concepts** and their **names** (words)
+- Multiple relationship types: causation, implication, prediction,
+  transformation, reasoning
+- **IS** and **OUGHT** statements
+- **Perspectives** of different people on those statements
+- **Higher-order concepts** that group elements together
+
+The `vastR` package lets you build VAST diagrams programmatically in R.
+
+## A First Diagram
+
+Let's recreate the classic Sun/Hot/Bright example from the paper:
+
+```{r basic-example}
+model <- vast_model(title = "Conceptual Implications") |>
+  add_nodes(
+    vast_concept("S", "S"),
+    vast_concept("H", "H"),
+    vast_concept("B", "B"),
+    vast_name("n_sun",    "Sun"),
+    vast_name("n_hot",    "Hot"),
+    vast_name("n_bright", "Bright")
+  ) |>
+  add_edges(
+    vast_implication("S", "H"),
+    vast_implication("S", "B"),
+    vast_naming("S", "n_sun"),
+    vast_naming("H", "n_hot"),
+    vast_naming("B", "n_bright")
+  )
+
+vast_render(model)
+```
+
+## Naming Modes
+
+VAST distinguishes concepts (abstract cognitive categories) from names
+(the words used to refer to them). The `naming_mode` parameter on
+`vast_model()` controls how this distinction is displayed. You always
+define both concepts and name nodes with naming edges — the mode only
+changes the rendering:
+
+**Integrated** (default): Concepts and names coexist in the diagram,
+connected by naming (n) arrows.
+
+```{r naming-integrated, eval=FALSE}
+vast_model(naming_mode = "integrated")  # this is the default
+```
+
+**Separated**: The main diagram shows only concepts with abstract labels.
+A separate legend box displays the concept-to-name mappings.
+
+```{r naming-separated, eval=FALSE}
+vast_model(naming_mode = "separated")
+```
+
+**FIMM** (Finger-is-Moon-Mode): Concept nodes display the label of their
+first connected name node directly. Name nodes and naming edges are
+hidden.
+
+```{r naming-fimm, eval=FALSE}
+vast_model(naming_mode = "fimm")
+```
+
+You can switch between modes by changing a single parameter — the model
+definition stays the same. See Example 1 (`inst/examples/01_conceptual_implication.R`)
+for a full demonstration.
+
+## Relationship Types
+
+VAST distinguishes six core relationship types. Each has a dedicated
+constructor with its own default color:
+
+```{r relationship-types}
+model <- vast_model(title = "Relationship Types", naming_mode = "fimm", rankdir = "LR") |>
+  add_nodes(
+    vast_concept("Smoking",    "Smoking"),
+    vast_concept("LungCancer", "Lung Cancer"),
+    vast_concept("Height",     "Height"),
+    vast_concept("YChrom",     "Y Chromosomes")
+  ) |>
+  add_edges(
+    vast_causation("Smoking", "LungCancer"),
+    vast_prediction("Height", "YChrom")
+  )
+
+vast_render(model)
+```
+
+## Relationship Strength
+
+All edge functions accept a `strength` parameter — numeric, verbal, or
+special markers:
+
+```{r strengths, eval=FALSE}
+vast_causation("X", "Y", strength = 0.5)      # Numeric
+vast_causation("X", "Y", strength = "weak")    # Verbal
+vast_causation("X", "Y", strength = "?")       # Unknown
+vast_causation("X", "Y", strength = "<> 0")    # Nonzero
+```
+
+## Diamonds: Logical Connectives and Custom Functions
+
+Diamonds can hold any label — standard connectives or formulas:
+
+```{r diamonds}
+model <- vast_model(naming_mode = "fimm", rankdir = "LR") |>
+  add_nodes(
+    vast_concept("X", "X"),
+    vast_concept("Z", "Z"),
+    vast_concept("Y", "Y"),
+    vast_diamond("fn", "Y = 2.45X + Z")
+  ) |>
+  add_edges(
+    vast_causation("X", "fn"),
+    vast_causation("Z", "fn"),
+    vast_causation("fn", "Y")
+  )
+
+vast_render(model)
+```
+
+## Higher-Order Concepts (Groups)
+
+Groups draw a bounding box around related elements. They can also be
+nested:
+
+```{r groups}
+model <- vast_model(title = "Nested Groups", naming_mode = "fimm") |>
+  add_nodes(
+    vast_concept("A", "A"),
+    vast_concept("B", "B"),
+    vast_concept("C", "C"),
+    vast_concept("D", "D"),
+    vast_diamond("d1", "AND")
+  ) |>
+  add_edges(
+    vast_causation("A", "d1"),
+    vast_causation("B", "d1"),
+    vast_causation("C", "d1"),
+    vast_causation("d1", "D")
+  ) |>
+  add_groups(
+    vast_group("g1", label = "Group 1", node_ids = c("A", "B"),
+               fillcolor = "#FCE4EC", bordercolor = "#C62828"),
+    vast_group("g2", label = "Group 2", node_ids = c("C"),
+               fillcolor = "#E8F5E9", bordercolor = "#2E7D32"),
+    vast_nested_group("outer", label = "All Inputs",
+                      node_ids = c("d1"),
+                      child_group_ids = c("g1", "g2"))
+  )
+
+vast_render(model)
+```
+
+## IS, OUGHT, and Perspectives
+
+```{r is-ought}
+model <- vast_model(title = "Beliefs and Perspectives") |>
+  add_nodes(
+    vast_concept("X", "X"),
+    vast_is("is1", value = "0.7"),
+    vast_ought("o1", value = "1.0"),
+    vast_perspective("p1", holder = "Alice", value = "0.9"),
+    vast_perspective("p2", holder = "Bob",   value = "0.4")
+  ) |>
+  add_edges(
+    vast_relation("X", "is1", type = "", color = "gray50"),
+    vast_relation("X", "o1",  type = "", color = "gray50"),
+    vast_relation("p1", "is1", type = "", color = "gray50", style = "dashed"),
+    vast_relation("p2", "is1", type = "", color = "gray50", style = "dashed")
+  )
+
+vast_render(model)
+```
+
+## Exporting
+
+```{r export, eval=FALSE}
+vast_export_svg(model, "my_diagram.svg")
+vast_export_png(model, "my_diagram.png", width = 1200, height = 800)
+```
+
+## Inspecting the DOT Code
+
+If you want to see or tweak the raw Graphviz DOT code:
+
+```{r dot-output}
+cat(vast_to_dot(model))
+```
+
+## Reference
+
+Leising, D., Grenke, O., & Cramer, M. (2023). Visual Argument Structure
+Tool (VAST) Version 1.0. *Meta-Psychology*, 7.
+doi: [10.15626/MP.2021.2911](https://doi.org/10.15626/MP.2021.2911)

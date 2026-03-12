@@ -1,0 +1,32 @@
+Package: vastR
+Title: Visual Argument Structure Tool for R
+Version: 0.1.0
+Authors@R: c(
+    person("Luebber", "Finn", email = "f.luebber2@uni-luebeck.de",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-0893-2120"))
+    )
+Description: An R implementation of the Visual Argument Structure Tool (VAST)
+    introduced by Leising, Grenke, and Cramer (2023). VAST provides a visual
+    language for mapping argument structures, distinguishing between concepts,
+    their names, different types of relationships (causation, implication,
+    prediction, transformation, reasoning), beliefs about what IS or OUGHT to
+    be the case, and different perspectives on these beliefs. This package
+    generates Graphviz DOT code and renders diagrams via 'DiagrammeR'.
+Status: experimental
+License: MIT + file LICENSE
+URL: https://github.com/finn-luebber/vastR
+BugReports: https://github.com/finn-luebber/vastR/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+    DiagrammeR (>= 1.0.0)
+Suggests:
+    DiagrammeRsvg,
+    rsvg,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3

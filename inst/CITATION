@@ -1,0 +1,22 @@
+bibentry(
+  bibtype  = "Manual",
+  title    = "vastR: Visual Argument Structure Tool for R",
+  author   = person("Finn", "Luebber"),
+  year     = "2026",
+  note     = "R package version 0.1.0",
+  url      = "https://github.com/finn-luebber/vastR"
+)
+
+bibentry(
+  bibtype  = "Article",
+  title    = "Visual Argument Structure Tool (VAST) Version 1.0",
+  author   = c(
+    person("Daniel", "Leising"),
+    person("Oliver", "Grenke"),
+    person("Marcos", "Cramer")
+  ),
+  journal  = "Meta-Psychology",
+  year     = "2023",
+  volume   = "7",
+  doi      = "10.15626/MP.2021.2911"
+)
