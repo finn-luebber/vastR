@@ -375,7 +375,7 @@ add_groups <- function(model, ...) {
       '<TR>',
       '<TD BGCOLOR="', p$concept_fill, '" BORDER="1" STYLE="ROUNDED">',
       '<FONT FACE="Arial" POINT-SIZE="', fs_c, '">', concept_lbl, '</FONT></TD>',
-      '<TD><FONT FACE="Arial" POINT-SIZE="9" COLOR="#795548"> n&#x2192; </FONT></TD>',
+      '<TD><FONT FACE="Arial" POINT-SIZE="9" COLOR="#795548"> n\u2192 </FONT></TD>',
       '<TD BGCOLOR="', p$name_fill, '" BORDER="1" STYLE="DASHED">',
       '<FONT FACE="Arial" POINT-SIZE="', fs_n, '">', name_lbl, '</FONT></TD>',
       '</TR>')
