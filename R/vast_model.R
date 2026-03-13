@@ -591,7 +591,7 @@ vast_export_svg <- function(model, file = "vast_diagram.svg") {
 
   widget  <- vast_render(model)
   svg_str <- DiagrammeRsvg::export_svg(widget)
-  writeLines(svg_str, file)
+  writeBin(charToRaw(enc2utf8(svg_str)), file)
   message("SVG exported to: ", file)
   invisible(NULL)
 }
@@ -611,20 +611,26 @@ vast_export_svg <- function(model, file = "vast_diagram.svg") {
 #' @export
 vast_export_png <- function(model, file = "vast_diagram.png",
                             width = 1200, height = 800) {
-  if (!requireNamespace("rsvg", quietly = TRUE)) {
-    stop("Package 'rsvg' is required. ",
-         "Install it with: install.packages('rsvg')",
-         call. = FALSE)
-  }
-
-  tmp_svg <- tempfile(fileext = ".svg")
-  vast_export_svg(model, file = tmp_svg)
-  svg_raw <- readLines(tmp_svg, warn = FALSE)
-  rsvg::rsvg_png(charToRaw(paste(svg_raw, collapse = "\n")),
-                 file = file, width = width, height = height)
-  unlink(tmp_svg)
-  message("PNG exported to: ", file)
-  invisible(NULL)
+    if (!requireNamespace("rsvg", quietly = TRUE)) {
+        stop("Package 'rsvg' is required. ",
+             "Install it with: install.packages('rsvg')",
+             call. = FALSE)
+    }
+    if (!requireNamespace("DiagrammeR", quietly = TRUE)) {
+        stop("Package 'DiagrammeR' is required.", call. = FALSE)
+    }
+    if (!requireNamespace("DiagrammeRsvg", quietly = TRUE)) {
+        stop("Package 'DiagrammeRsvg' is required. ",
+             "Install it with: install.packages('DiagrammeRsvg')",
+             call. = FALSE)
+    }
+    
+    widget  <- vast_render(model)
+    svg_str <- DiagrammeRsvg::export_svg(widget)
+    rsvg::rsvg_png(charToRaw(enc2utf8(svg_str)),
+                   file = file, width = width, height = height)
+    message("PNG exported to: ", file)
+    invisible(NULL)
 }
 
 
