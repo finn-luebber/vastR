@@ -31,6 +31,9 @@
 #' @param fontsize_names Numeric. Font size for name nodes. Useful for
 #'   shrinking long natural-language labels independently.
 #' @param fontsize_edges Numeric. Font size for all edge labels.
+#' @param analyst Character. Name(s) of the analyst(s) who created
+#'   the display (e.g., `"Daniel"`, `"Daniel, Marcos"`). Displayed
+#'   in the top-left corner of the diagram.
 #' @param bgcolor Character. Background color of the graph.
 #' @param nodesep Numeric. Minimum horizontal space between nodes (inches).
 #' @param ranksep Numeric. Minimum vertical space between ranks (inches).
@@ -40,6 +43,7 @@
 #' @examples
 #' m <- vast_model(title = "My Argument", naming_mode = "fimm")
 #' m <- vast_model(fontsize_names = 9, fontsize_edges = 8)
+#' m <- vast_model(analyst = "Daniel, Marcos")
 #'
 #' @export
 vast_model <- function(title          = "",
@@ -49,6 +53,7 @@ vast_model <- function(title          = "",
                        fontsize_nodes = 12,
                        fontsize_names = 10,
                        fontsize_edges = 10,
+                       analyst        = "",
                        bgcolor        = "white",
                        nodesep        = 0.6,
                        ranksep        = 0.8) {
@@ -62,6 +67,7 @@ vast_model <- function(title          = "",
     fontsize_nodes = fontsize_nodes,
     fontsize_names = fontsize_names,
     fontsize_edges = fontsize_edges,
+    analyst        = analyst,
     bgcolor        = bgcolor,
     nodesep        = nodesep,
     ranksep        = ranksep,
@@ -251,6 +257,11 @@ add_groups <- function(model, ...) {
     'fontcolor="gray20"'
   )
 
+  # Bidirectional arrow support
+  if (isTRUE(edge$bidirectional)) {
+    attrs <- c(attrs, 'dir="both"')
+  }
+
   # Compound edge support
   if (!is.null(edge$lhead) && nzchar(edge$lhead)) {
     attrs <- c(attrs, paste0('lhead="cluster_', edge$lhead, '"'))
@@ -328,6 +339,38 @@ add_groups <- function(model, ...) {
 }
 
 
+#' Build HTML table cell attributes that mirror a Graphviz node style
+#'
+#' Translates the node's `style` string (e.g., `"filled"`, `"filled,dashed"`,
+#' `"rounded"`) into the corresponding HTML `<TD>` attributes. BGCOLOR is
+#' only set when the style includes `"filled"`; STYLE is built from the
+#' applicable keywords (ROUNDED, DASHED, DOTTED).
+#'
+#' @param node_style Character. The node's Graphviz style string.
+#' @param fillcolor Character. The node's fill color.
+#' @return A character string of TD attributes (e.g., ` BGCOLOR="#E8F0FE" BORDER="1" STYLE="ROUNDED"`).
+#' @keywords internal
+.legend_cell_attrs <- function(node_style, fillcolor) {
+  # BGCOLOR only when the node is actually filled
+  has_filled <- grepl("filled", node_style, fixed = TRUE)
+  bg <- if (has_filled) paste0(' BGCOLOR="', fillcolor, '"') else ""
+
+  # Collect applicable HTML table cell style keywords
+  styles <- character()
+  if (grepl("rounded", node_style, fixed = TRUE)) styles <- c(styles, "ROUNDED")
+  if (grepl("dashed",  node_style, fixed = TRUE)) styles <- c(styles, "DASHED")
+  if (grepl("dotted",  node_style, fixed = TRUE)) styles <- c(styles, "DOTTED")
+
+  style_attr <- if (length(styles) > 0) {
+    paste0(' STYLE="', paste(styles, collapse = ","), '"')
+  } else {
+    ""
+  }
+
+  paste0(bg, ' BORDER="1"', style_attr)
+}
+
+
 #' Generate a naming legend as a compact HTML table node for separated mode
 #' @keywords internal
 .naming_legend_to_dot <- function(model, naming_info) {
@@ -350,8 +393,10 @@ add_groups <- function(model, ...) {
     pairs[[length(pairs) + 1]] <- list(
       concept_label = concept_node$label,
       concept_fill  = concept_node$fillcolor,
+      concept_style = concept_node$style,
       name_label    = name_node$label,
-      name_fill     = name_node$fillcolor
+      name_fill     = name_node$fillcolor,
+      name_style    = name_node$style
     )
   }
 
@@ -371,12 +416,20 @@ add_groups <- function(model, ...) {
     concept_lbl <- gsub('"', '&quot;', gsub('\n', '<BR/>', p$concept_label))
     name_lbl    <- gsub('"', '&quot;', gsub('\n', '<BR/>', p$name_label))
 
+    # Build HTML table cell attributes that mirror the actual node styles.
+    # Graphviz HTML table cells support STYLE="ROUNDED", STYLE="DASHED",
+    # STYLE="DOTTED", and combinations thereof. BGCOLOR is only applied
+    # when the node style includes "filled"; otherwise the cell background
+    # is left white to match the unfilled node in the main diagram.
+    concept_td <- .legend_cell_attrs(p$concept_style, p$concept_fill)
+    name_td    <- .legend_cell_attrs(p$name_style, p$name_fill)
+
     html <- paste0(html,
       '<TR>',
-      '<TD BGCOLOR="', p$concept_fill, '" BORDER="1" STYLE="ROUNDED">',
+      '<TD', concept_td, '>',
       '<FONT FACE="Arial" POINT-SIZE="', fs_c, '">', concept_lbl, '</FONT></TD>',
       '<TD><FONT FACE="Arial" POINT-SIZE="9" COLOR="#795548"> n\u2192 </FONT></TD>',
-      '<TD BGCOLOR="', p$name_fill, '" BORDER="1" STYLE="DASHED">',
+      '<TD', name_td, '>',
       '<FONT FACE="Arial" POINT-SIZE="', fs_n, '">', name_lbl, '</FONT></TD>',
       '</TR>')
   }
@@ -452,11 +505,31 @@ vast_to_dot <- function(model) {
   lines <- c(lines, '         fontname="Arial"];')
   lines <- c(lines, "")
 
-  # Title
-  if (nzchar(model$title)) {
+  # Title and analyst as combined HTML table label at top
+  has_title   <- nzchar(model$title)
+  has_analyst <- nzchar(model$analyst)
+  if (has_title || has_analyst) {
     lines <- c(lines, '  labelloc="t";')
-    lines <- c(lines, paste0('  label="',
-                              gsub('"', '\\\\"', model$title), '";'))
+    if (has_title && !has_analyst) {
+      lines <- c(lines, paste0('  label="',
+                                gsub('"', '\\\\"', model$title), '";'))
+    } else if (!has_title && has_analyst) {
+      lines <- c(lines, paste0('  label="Analyst: ',
+                                gsub('"', '\\\\"', model$analyst), '";'))
+    } else {
+      # Both: use HTML table label
+      title_esc   <- gsub('"', '&quot;', gsub('&', '&amp;', model$title))
+      analyst_esc <- gsub('"', '&quot;', gsub('&', '&amp;', model$analyst))
+      html_label <- paste0(
+        '  label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2">',
+        '<TR><TD><FONT FACE="Arial" POINT-SIZE="', model$fontsize, '">',
+        title_esc, '</FONT></TD></TR>',
+        '<TR><TD><FONT FACE="Arial" POINT-SIZE="10" COLOR="gray30">',
+        'Analyst: ', analyst_esc, '</FONT></TD></TR>',
+        '</TABLE>>;'
+      )
+      lines <- c(lines, html_label)
+    }
     lines <- c(lines, "")
   }
 
@@ -465,6 +538,45 @@ vast_to_dot <- function(model) {
     lines <- c(lines, '  fimm_label [label="FIMM", shape="plaintext",')
     lines <- c(lines, '    fontsize=10, fontname="Arial", fontcolor="gray50"];')
     lines <- c(lines, "")
+  }
+
+  # Collect footnotes from diamond nodes and assign superscript numbers
+  # Unicode superscripts: 1-9
+  .superscripts <- c("\u00B9", "\u00B2", "\u00B3", "\u2074", "\u2075",
+                     "\u2076", "\u2077", "\u2078", "\u2079")
+  footnote_entries <- list()  # list of list(superscript, text)
+  footnote_label_overrides <- list()  # node_id -> display label
+
+  fn_counter <- 0
+  for (nid in names(model$nodes)) {
+    node <- model$nodes[[nid]]
+    if (identical(node$type, "diamond") && !is.null(node$footnote)) {
+      fn_counter <- fn_counter + 1
+      # Build superscript: for numbers > 9, concatenate digit superscripts
+      if (fn_counter <= 9) {
+        sup <- .superscripts[fn_counter]
+      } else {
+        digits <- strsplit(as.character(fn_counter), "")[[1]]
+        sup <- paste0(sapply(as.integer(digits), function(d) {
+          if (d == 0) "\u2070" else .superscripts[d]
+        }), collapse = "")
+      }
+      # Diamond shows: *¹  (asterisk with superscript number)
+      footnote_label_overrides[[nid]] <- paste0("*", sup)
+      # Footnote at bottom shows: ¹ formula text
+      footnote_entries[[length(footnote_entries) + 1]] <- list(
+        superscript = sup,
+        text        = node$footnote
+      )
+    }
+  }
+
+  # Merge footnote label overrides into the main label_overrides
+  if (length(footnote_label_overrides) > 0) {
+    if (is.null(label_overrides)) label_overrides <- character()
+    for (nid in names(footnote_label_overrides)) {
+      label_overrides[nid] <- footnote_label_overrides[[nid]]
+    }
   }
 
   # Determine which nodes live inside groups
@@ -515,6 +627,31 @@ vast_to_dot <- function(model) {
     lines <- c(lines, "")
   }
 
+  # Edges — first validate that all referenced node IDs exist
+  all_node_ids <- names(model$nodes)
+  if (length(model$edges) > 0) {
+    missing <- character()
+    for (i in seq_along(model$edges)) {
+      if (!is.null(skip_edge_idx) && i %in% skip_edge_idx) next
+      edge <- model$edges[[i]]
+      if (!(edge$from %in% all_node_ids)) {
+        missing <- c(missing, edge$from)
+      }
+      if (!(edge$to %in% all_node_ids)) {
+        missing <- c(missing, edge$to)
+      }
+    }
+    missing <- unique(missing)
+    if (length(missing) > 0) {
+      existing <- paste0('"', all_node_ids, '"', collapse = ", ")
+      stop("Edge(s) reference node ID(s) that do not exist: ",
+           paste0('"', missing, '"', collapse = ", "), ".\n",
+           "  Existing node IDs are: ", existing, ".\n",
+           "  Check for typos in your edge definitions.",
+           call. = FALSE)
+    }
+  }
+
   # Edges (skipping suppressed naming edges)
   if (length(model$edges) > 0) {
     lines <- c(lines, "  // --- Relationships ---")
@@ -530,6 +667,41 @@ vast_to_dot <- function(model) {
   if (naming_mode == "separated" && length(naming_info$naming_edge_idx) > 0) {
     lines <- c(lines, "  // --- Naming Legend ---")
     lines <- c(lines, .naming_legend_to_dot(model, naming_info))
+    lines <- c(lines, "")
+  }
+
+  # Footnotes from diamond nodes (forced to last rank)
+  if (length(footnote_entries) > 0) {
+    lines <- c(lines, "  // --- Footnotes ---")
+    fn_parts <- vapply(footnote_entries, function(fn) {
+      paste0(fn$superscript, " ", fn$text)
+    }, character(1))
+    fn_text <- paste(fn_parts, collapse = "\\n")
+    lines <- c(lines, paste0('  _footnotes [label="',
+                              gsub('"', '\\\\"', fn_text),
+                              '", shape="plaintext",'))
+    lines <- c(lines, '    fontsize=10, fontname="Arial", fontcolor="gray30"];')
+
+    # Find an anchor node to constrain footnotes to the bottom.
+    # We pick a "sink" node — one with no outgoing edges in the rendered
+    # graph — so the footnote is pulled below the lowest rank.
+    # The invisible edge keeps the footnote node connected to the graph,
+    # which avoids an assertion crash in viz.js's network-simplex ranker
+    # that occurs when rank=sink is used with a disconnected node.
+    rendered_ids <- names(model$nodes)
+    if (!is.null(skip_node_ids)) {
+      rendered_ids <- setdiff(rendered_ids, skip_node_ids)
+    }
+    sources <- character()
+    for (i in seq_along(model$edges)) {
+      if (!is.null(skip_edge_idx) && i %in% skip_edge_idx) next
+      sources <- c(sources, model$edges[[i]]$from)
+    }
+    sink_ids <- setdiff(rendered_ids, unique(sources))
+    # Fall back to the last rendered node if every node has outgoing edges
+    anchor_id <- if (length(sink_ids) > 0) sink_ids[1] else rendered_ids[length(rendered_ids)]
+    lines <- c(lines, paste0('  "', anchor_id,
+                              '" -> _footnotes [style="invis", weight=10];'))
     lines <- c(lines, "")
   }
 
@@ -591,7 +763,7 @@ vast_export_svg <- function(model, file = "vast_diagram.svg") {
 
   widget  <- vast_render(model)
   svg_str <- DiagrammeRsvg::export_svg(widget)
-  writeBin(charToRaw(enc2utf8(svg_str)), file)
+  writeLines(svg_str, file)
   message("SVG exported to: ", file)
   invisible(NULL)
 }
@@ -611,26 +783,20 @@ vast_export_svg <- function(model, file = "vast_diagram.svg") {
 #' @export
 vast_export_png <- function(model, file = "vast_diagram.png",
                             width = 1200, height = 800) {
-    if (!requireNamespace("rsvg", quietly = TRUE)) {
-        stop("Package 'rsvg' is required. ",
-             "Install it with: install.packages('rsvg')",
-             call. = FALSE)
-    }
-    if (!requireNamespace("DiagrammeR", quietly = TRUE)) {
-        stop("Package 'DiagrammeR' is required.", call. = FALSE)
-    }
-    if (!requireNamespace("DiagrammeRsvg", quietly = TRUE)) {
-        stop("Package 'DiagrammeRsvg' is required. ",
-             "Install it with: install.packages('DiagrammeRsvg')",
-             call. = FALSE)
-    }
-    
-    widget  <- vast_render(model)
-    svg_str <- DiagrammeRsvg::export_svg(widget)
-    rsvg::rsvg_png(charToRaw(enc2utf8(svg_str)),
-                   file = file, width = width, height = height)
-    message("PNG exported to: ", file)
-    invisible(NULL)
+  if (!requireNamespace("rsvg", quietly = TRUE)) {
+    stop("Package 'rsvg' is required. ",
+         "Install it with: install.packages('rsvg')",
+         call. = FALSE)
+  }
+
+  tmp_svg <- tempfile(fileext = ".svg")
+  vast_export_svg(model, file = tmp_svg)
+  svg_raw <- readLines(tmp_svg, warn = FALSE)
+  rsvg::rsvg_png(charToRaw(paste(svg_raw, collapse = "\n")),
+                 file = file, width = width, height = height)
+  unlink(tmp_svg)
+  message("PNG exported to: ", file)
+  invisible(NULL)
 }
 
 
@@ -642,6 +808,7 @@ print.vast_model <- function(x, ...) {
   cat("VAST Model")
   if (nzchar(x$title)) cat(": ", x$title)
   cat("\n")
+  if (nzchar(x$analyst)) cat("  Analyst:    ", x$analyst, "\n")
   cat("  Nodes:      ", length(x$nodes), "\n")
   cat("  Edges:      ", length(x$edges), "\n")
   cat("  Groups:     ", length(x$groups), "\n")

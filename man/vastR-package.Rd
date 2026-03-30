@@ -34,13 +34,13 @@ Tool (VAST) Version 1.0. \emph{Meta-Psychology}, 7.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/finn-luebber/vastR}
-  \item Report bugs at \url{https://github.com/finn-luebber/vastR/issues}
+  \item \url{https://github.com/yourname/vastR}
+  \item Report bugs at \url{https://github.com/yourname/vastR/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Luebber Finn \email{f.luebber2@uni-luebeck.de} (\href{https://orcid.org/0000-0003-0893-2120}{ORCID})
+\strong{Maintainer}: Your Name \email{your.email@example.com} (\href{https://orcid.org/0000-0000-0000-0000}{ORCID})
 
 }
 \keyword{internal}

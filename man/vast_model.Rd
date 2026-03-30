@@ -12,6 +12,7 @@ vast_model(
   fontsize_nodes = 12,
   fontsize_names = 10,
   fontsize_edges = 10,
+  analyst = "",
   bgcolor = "white",
   nodesep = 0.6,
   ranksep = 0.8
@@ -45,6 +46,10 @@ shrinking long natural-language labels independently.}
 
 \item{fontsize_edges}{Numeric. Font size for all edge labels.}
 
+\item{analyst}{Character. Name(s) of the analyst(s) who created
+the display (e.g., \code{"Daniel"}, \code{"Daniel, Marcos"}). Displayed
+in the top-left corner of the diagram.}
+
 \item{bgcolor}{Character. Background color of the graph.}
 
 \item{nodesep}{Numeric. Minimum horizontal space between nodes (inches).}
@@ -66,5 +71,6 @@ All builder functions support R's native pipe (\verb{|>}).
 \examples{
 m <- vast_model(title = "My Argument", naming_mode = "fimm")
 m <- vast_model(fontsize_names = 9, fontsize_edges = 8)
+m <- vast_model(analyst = "Daniel, Marcos")
 
 }

@@ -217,25 +217,50 @@ vast_perspective <- function(id,
 #' arbitrary function or formula (e.g., `"Y = 2.45X + Z"`,
 #' `"weighted mean"`, `"max(A, B)"`).
 #'
+#' When `footnote` is provided, the formula is displayed as a footnote
+#' at the bottom of the diagram, and the diamond label is automatically
+#' replaced with a superscript number (e.g., `"\u00B9"`, `"\u00B2"`).
+#' The numbering is assigned automatically based on the order diamonds
+#' with footnotes appear in the model.
+#'
 #' @inheritParams vast_concept
 #' @param label Character. Content of the diamond.
+#' @param footnote Logical or Character or `NULL`. Controls whether the
+#'   diamond's label is moved to a footnote area at the bottom of the
+#'   diagram. If `TRUE`, the current `label` text is used as the footnote
+#'   and the diamond displays an asterisk with a superscript number
+#'   (e.g., `"*\u00B9"`). If a character string, that string is used as
+#'   the footnote text instead. If `NULL` (default), no footnote is
+#'   created and the label is displayed normally in the diamond.
 #'
 #' @return A list of class `vast_node`.
 #'
 #' @examples
 #' vast_diamond("d1", label = "AND")
 #' vast_diamond("fn1", label = "Y = 2X + Z")
-#' vast_diamond("agg", label = "weighted\nmean")
+#' vast_diamond("fn2", label = "Y = 2.45X + Z", footnote = TRUE)
 #'
 #' @export
 vast_diamond <- function(id,
                          label     = "AND",
                          fillcolor = "#FFFDE7",
                          fontsize  = 10,
-                         penwidth  = 1.5) {
-  .make_node(id, label, type = "diamond", shape = "diamond",
-             style = "filled", fillcolor = fillcolor, fontsize = fontsize,
-             width = 1.0, height = 0.8, penwidth = penwidth)
+                         penwidth  = 1.5,
+                         footnote  = NULL) {
+  # Determine footnote text: TRUE means use the label as footnote text
+  fn_text <- NULL
+  if (isTRUE(footnote)) {
+    fn_text <- label
+  } else if (is.character(footnote) && nzchar(footnote)) {
+    fn_text <- footnote
+  }
+
+  node <- .make_node(id, label, type = "diamond", shape = "diamond",
+                     style = "filled", fillcolor = fillcolor,
+                     fontsize = fontsize,
+                     width = 1.0, height = 0.8, penwidth = penwidth)
+  node$footnote <- fn_text
+  node
 }
 
 

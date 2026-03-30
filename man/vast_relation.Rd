@@ -15,7 +15,8 @@ vast_relation(
   fontsize = 10,
   index = NULL,
   lhead = NULL,
-  ltail = NULL
+  ltail = NULL,
+  bidirectional = FALSE
 )
 }
 \arguments{
@@ -54,6 +55,12 @@ node. The \code{to} node must be inside that group.}
 \item{ltail}{Character or \code{NULL}. ID of a group that the arrow should
 visually originate \strong{from}. The arrow will start at the border of
 that group's bounding box. The \code{from} node must be inside that group.}
+
+\item{bidirectional}{Logical. If \code{TRUE}, the arrow is drawn with
+arrowheads in both directions. Use for symmetric relationships
+(e.g., identical concepts via \verb{i 1}, mutual predictions). A single
+strength value applies to both directions; if strengths differ by
+direction, use two separate edges instead.}
 }
 \value{
 A list of class \code{vast_edge}.
@@ -70,5 +77,8 @@ vast_relation("A", "B", type = "", color = "gray60")
 
 # Arrow pointing to the border of group "bio" instead of node "genes":
 vast_causation("ext", "genes", lhead = "bio")
+
+# Bidirectional implication (identity):
+vast_implication("X", "Y", strength = 1, bidirectional = TRUE)
 
 }

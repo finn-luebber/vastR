@@ -11,6 +11,10 @@ vast_causation(
   index = NULL,
   lhead = NULL,
   ltail = NULL,
+  bidirectional = FALSE,
+  color = "#C62828",
+  style = "solid",
+  penwidth = 1.5,
   ...
 )
 }
@@ -35,6 +39,19 @@ node. The \code{to} node must be inside that group.}
 \item{ltail}{Character or \code{NULL}. ID of a group that the arrow should
 visually originate \strong{from}. The arrow will start at the border of
 that group's bounding box. The \code{from} node must be inside that group.}
+
+\item{bidirectional}{Logical. If \code{TRUE}, the arrow is drawn with
+arrowheads in both directions. Use for symmetric relationships
+(e.g., identical concepts via \verb{i 1}, mutual predictions). A single
+strength value applies to both directions; if strengths differ by
+direction, use two separate edges instead.}
+
+\item{color}{Character. Edge color (any valid Graphviz color).}
+
+\item{style}{Character. Graphviz edge style: \code{"solid"}, \code{"dashed"},
+\code{"dotted"}, \code{"bold"}.}
+
+\item{penwidth}{Numeric. Edge line width.}
 
 \item{...}{Additional arguments passed to \code{\link[=vast_relation]{vast_relation()}}.}
 }

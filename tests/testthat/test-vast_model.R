@@ -173,3 +173,198 @@ test_that("fontsize overrides are applied in DOT output", {
   # Edges should have fontsize=7
   expect_true(grepl('fontsize=7', dot))
 })
+
+test_that("analyst label appears in DOT output", {
+  m <- vast_model(title = "Test", analyst = "Daniel, Marcos") |>
+    add_nodes(vast_concept("X"))
+  dot <- vast_to_dot(m)
+
+  expect_true(grepl("Analyst: Daniel, Marcos", dot))
+  expect_true(grepl("labelloc", dot))
+})
+
+test_that("analyst label works without title", {
+  m <- vast_model(analyst = "Daniel") |>
+    add_nodes(vast_concept("X"))
+  dot <- vast_to_dot(m)
+
+  expect_true(grepl("Analyst: Daniel", dot))
+})
+
+test_that("analyst label is omitted when empty", {
+  m <- vast_model() |>
+    add_nodes(vast_concept("X"))
+  dot <- vast_to_dot(m)
+
+  expect_false(grepl("Analyst:", dot))
+})
+
+test_that("bidirectional edge produces dir=both in DOT", {
+  m <- vast_model() |>
+    add_nodes(vast_concept("X"), vast_concept("Y")) |>
+    add_edges(vast_implication("X", "Y", strength = 1, bidirectional = TRUE))
+  dot <- vast_to_dot(m)
+
+  expect_true(grepl('dir="both"', dot))
+})
+
+test_that("non-bidirectional edge does not produce dir=both", {
+  m <- vast_model() |>
+    add_nodes(vast_concept("X"), vast_concept("Y")) |>
+    add_edges(vast_causation("X", "Y"))
+  dot <- vast_to_dot(m)
+
+  expect_false(grepl('dir="both"', dot))
+})
+
+test_that("diamond footnote replaces label with asterisk and superscript", {
+  m <- vast_model() |>
+    add_nodes(
+      vast_concept("X"),
+      vast_concept("Y"),
+      vast_diamond("fn1", label = "Y = 2X + Z", footnote = TRUE)
+    ) |>
+    add_edges(
+      vast_causation("X", "fn1"),
+      vast_causation("fn1", "Y")
+    )
+  dot <- vast_to_dot(m)
+
+  # Diamond should show asterisk with superscript
+  expect_true(grepl(paste0("\\*", "\u00B9"), dot))
+  # Footnote text should appear at the bottom
+  expect_true(grepl("Y = 2X \\+ Z", dot))
+  expect_true(grepl("_footnotes", dot))
+})
+
+test_that("multiple footnotes get sequential superscripts", {
+  m <- vast_model() |>
+    add_nodes(
+      vast_concept("X"),
+      vast_concept("Y"),
+      vast_concept("Z"),
+      vast_diamond("fn1", label = "formula A", footnote = TRUE),
+      vast_diamond("fn2", label = "formula B", footnote = TRUE)
+    ) |>
+    add_edges(
+      vast_causation("X", "fn1"),
+      vast_causation("fn1", "Y"),
+      vast_causation("Y", "fn2"),
+      vast_causation("fn2", "Z")
+    )
+  dot <- vast_to_dot(m)
+
+  # Both superscripts should appear
+  expect_true(grepl("\u00B9", dot))
+  expect_true(grepl("\u00B2", dot))
+  # Both formulas in footnotes
+  expect_true(grepl("formula A", dot))
+  expect_true(grepl("formula B", dot))
+})
+
+test_that("diamond without footnote keeps its label", {
+  m <- vast_model() |>
+    add_nodes(
+      vast_concept("X"),
+      vast_concept("Y"),
+      vast_diamond("d1", label = "AND")
+    ) |>
+    add_edges(
+      vast_causation("X", "d1"),
+      vast_causation("d1", "Y")
+    )
+  dot <- vast_to_dot(m)
+
+  expect_true(grepl("AND", dot))
+  expect_false(grepl("_footnotes", dot))
+})
+
+test_that("edge referencing nonexistent node throws informative error", {
+  m <- vast_model() |>
+    add_nodes(vast_concept("Smoking"), vast_concept("LungCancer")) |>
+    add_edges(vast_causation("Smokin", "LungCancer"))
+
+  expect_error(vast_to_dot(m), "Smokin")
+  expect_error(vast_to_dot(m), "do not exist")
+})
+
+test_that("edge validation lists all existing node IDs in error", {
+  m <- vast_model() |>
+    add_nodes(vast_concept("X"), vast_concept("Y")) |>
+    add_edges(vast_causation("X", "Z"))
+
+  expect_error(vast_to_dot(m), "X")
+  expect_error(vast_to_dot(m), "Y")
+})
+
+test_that("edge validation ignores skipped naming edges in fimm mode", {
+  # In FIMM mode, naming edges are skipped — their from/to should not
+
+  # be validated if the name node is hidden
+  m <- vast_model(naming_mode = "fimm") |>
+    add_nodes(
+      vast_concept("S", "S"),
+      vast_name("n_sun", "Sun")
+    ) |>
+    add_edges(vast_naming("S", "n_sun"))
+
+  # Should not error — the naming edge is skipped
+
+  expect_no_error(vast_to_dot(m))
+})
+
+test_that("separated mode legend matches concept node style", {
+  m <- vast_model(naming_mode = "separated") |>
+    add_nodes(
+      vast_concept("S", "S", fillcolor = "#FF0000"),
+      vast_name("n_sun", "Sun")
+    ) |>
+    add_edges(vast_naming("S", "n_sun"))
+  dot <- vast_to_dot(m)
+
+  # Legend should contain the custom fill color
+  expect_true(grepl("#FF0000", dot))
+  # Legend concept cells should NOT have ROUNDED style
+  expect_false(grepl("ROUNDED", dot))
+})
+
+test_that("separated mode legend reflects dashed concept style", {
+  m <- vast_model(naming_mode = "separated") |>
+    add_nodes(
+      vast_concept("S", "S", style = "filled,dashed"),
+      vast_name("n_sun", "Sun")
+    ) |>
+    add_edges(vast_naming("S", "n_sun"))
+  dot <- vast_to_dot(m)
+
+  # The legend should show DASHED style for the concept cell
+  expect_true(grepl("DASHED", dot))
+})
+
+test_that("separated mode legend reflects rounded style without fill", {
+  m <- vast_model(naming_mode = "separated") |>
+    add_nodes(
+      vast_concept("S", "S", style = "rounded"),
+      vast_name("n_sun", "Sun")
+    ) |>
+    add_edges(vast_naming("S", "n_sun"))
+  dot <- vast_to_dot(m)
+
+  # Legend concept cell should have ROUNDED style
+  expect_true(grepl("ROUNDED", dot))
+  # Default fillcolor should NOT appear as BGCOLOR when style lacks "filled"
+  expect_false(grepl('BGCOLOR="#E8F0FE"', dot))
+})
+
+test_that("separated mode legend applies fill only when style includes filled", {
+  m <- vast_model(naming_mode = "separated") |>
+    add_nodes(
+      vast_concept("S", "S", style = "filled", fillcolor = "#FF0000"),
+      vast_name("n_sun", "Sun")
+    ) |>
+    add_edges(vast_naming("S", "n_sun"))
+  dot <- vast_to_dot(m)
+
+  # Red fill should appear because style includes "filled"
+  expect_true(grepl('#FF0000', dot))
+})

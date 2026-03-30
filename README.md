@@ -88,7 +88,9 @@ vast_render(model)
 - Nested groups via `vast_nested_group()`
 - Compound edges (`lhead`/`ltail`) — arrows to/from group borders
 - Arbitrary content in diamonds (custom functions, formulas)
+- Diamond footnotes for long formulas (`footnote = TRUE`)
 - Numeric, verbal, or special strength markers on all relationships
+- Edge validation — informative errors when edge IDs contain typos
 - Export to SVG and PNG
 - Pipe-friendly API (`|>`)
 

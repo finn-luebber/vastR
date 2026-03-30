@@ -9,7 +9,8 @@ vast_diamond(
   label = "AND",
   fillcolor = "#FFFDE7",
   fontsize = 10,
-  penwidth = 1.5
+  penwidth = 1.5,
+  footnote = NULL
 )
 }
 \arguments{
@@ -22,6 +23,14 @@ vast_diamond(
 \item{fontsize}{Numeric. Font size in points.}
 
 \item{penwidth}{Numeric. Border line width.}
+
+\item{footnote}{Logical or Character or \code{NULL}. Controls whether the
+diamond's label is moved to a footnote area at the bottom of the
+diagram. If \code{TRUE}, the current \code{label} text is used as the footnote
+and the diamond displays an asterisk with a superscript number
+(e.g., \code{"*\\u00B9"}). If a character string, that string is used as
+the footnote text instead. If \code{NULL} (default), no footnote is
+created and the label is displayed normally in the diamond.}
 }
 \value{
 A list of class \code{vast_node}.
@@ -32,9 +41,16 @@ a standard logical connective (\code{"AND"}, \code{"OR"}, \code{"XOR"}) or any
 arbitrary function or formula (e.g., \code{"Y = 2.45X + Z"},
 \code{"weighted mean"}, \code{"max(A, B)"}).
 }
+\details{
+When \code{footnote} is provided, the formula is displayed as a footnote
+at the bottom of the diagram, and the diamond label is automatically
+replaced with a superscript number (e.g., \code{"\\u00B9"}, \code{"\\u00B2"}).
+The numbering is assigned automatically based on the order diamonds
+with footnotes appear in the model.
+}
 \examples{
 vast_diamond("d1", label = "AND")
 vast_diamond("fn1", label = "Y = 2X + Z")
-vast_diamond("agg", label = "weighted\nmean")
+vast_diamond("fn2", label = "Y = 2.45X + Z", footnote = TRUE)
 
 }

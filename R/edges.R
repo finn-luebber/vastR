@@ -6,7 +6,8 @@
 
 .make_edge <- function(from, to, type, strength, color, style,
                        penwidth, fontsize, index,
-                       lhead = NULL, ltail = NULL) {
+                       lhead = NULL, ltail = NULL,
+                       bidirectional = FALSE) {
   type_label <- type
   if (!is.null(index)) {
     type_label <- paste0(type, index)
@@ -19,18 +20,19 @@
   }
 
   edge <- list(
-    from     = from,
-    to       = to,
-    type     = type,
-    strength = strength,
-    label    = edge_label,
-    color    = color,
-    style    = style,
-    penwidth = penwidth,
-    fontsize = fontsize,
-    fontname = "Arial",
-    lhead    = lhead,
-    ltail    = ltail
+    from          = from,
+    to            = to,
+    type          = type,
+    strength      = strength,
+    label         = edge_label,
+    color         = color,
+    style         = style,
+    penwidth      = penwidth,
+    fontsize      = fontsize,
+    fontname      = "Arial",
+    lhead         = lhead,
+    ltail         = ltail,
+    bidirectional = bidirectional
   )
   class(edge) <- "vast_edge"
   edge
@@ -69,6 +71,11 @@
 #' @param ltail Character or `NULL`. ID of a group that the arrow should
 #'   visually originate **from**. The arrow will start at the border of
 #'   that group's bounding box. The `from` node must be inside that group.
+#' @param bidirectional Logical. If `TRUE`, the arrow is drawn with
+#'   arrowheads in both directions. Use for symmetric relationships
+#'   (e.g., identical concepts via `i 1`, mutual predictions). A single
+#'   strength value applies to both directions; if strengths differ by
+#'   direction, use two separate edges instead.
 #'
 #' @return A list of class `vast_edge`.
 #'
@@ -79,20 +86,25 @@
 #' # Arrow pointing to the border of group "bio" instead of node "genes":
 #' vast_causation("ext", "genes", lhead = "bio")
 #'
+#' # Bidirectional implication (identity):
+#' vast_implication("X", "Y", strength = 1, bidirectional = TRUE)
+#'
 #' @export
 vast_relation <- function(from,
                           to,
-                          type     = "c",
-                          strength = NULL,
-                          color    = "gray30",
-                          style    = "solid",
-                          penwidth = 1.5,
-                          fontsize = 10,
-                          index    = NULL,
-                          lhead    = NULL,
-                          ltail    = NULL) {
+                          type          = "c",
+                          strength      = NULL,
+                          color         = "gray30",
+                          style         = "solid",
+                          penwidth      = 1.5,
+                          fontsize      = 10,
+                          index         = NULL,
+                          lhead         = NULL,
+                          ltail         = NULL,
+                          bidirectional = FALSE) {
   .make_edge(from, to, type, strength, color, style,
-             penwidth, fontsize, index, lhead = lhead, ltail = ltail)
+             penwidth, fontsize, index, lhead = lhead, ltail = ltail,
+             bidirectional = bidirectional)
 }
 
 
@@ -107,11 +119,15 @@ vast_relation <- function(from,
 #' @return A list of class `vast_edge`.
 #' @export
 vast_naming <- function(from, to, strength = NULL, index = NULL,
-                       lhead = NULL, ltail = NULL, ...) {
+                       lhead = NULL, ltail = NULL,
+                       bidirectional = FALSE,
+                       color = "#795548", style = "solid",
+                       penwidth = 1.5, ...) {
   .make_edge(from, to, type = "n", strength = strength,
-             color = "#795548", style = "solid",
-             penwidth = 1.5, fontsize = 10, index = index,
-             lhead = lhead, ltail = ltail)
+             color = color, style = style,
+             penwidth = penwidth, fontsize = 10, index = index,
+             lhead = lhead, ltail = ltail,
+             bidirectional = bidirectional)
 }
 
 
@@ -125,11 +141,15 @@ vast_naming <- function(from, to, strength = NULL, index = NULL,
 #' @return A list of class `vast_edge`.
 #' @export
 vast_implication <- function(from, to, strength = NULL, index = NULL,
-                            lhead = NULL, ltail = NULL, ...) {
+                            lhead = NULL, ltail = NULL,
+                            bidirectional = FALSE,
+                            color = "#1565C0", style = "solid",
+                            penwidth = 1.5, ...) {
   .make_edge(from, to, type = "i", strength = strength,
-             color = "#1565C0", style = "solid",
-             penwidth = 1.5, fontsize = 10, index = index,
-             lhead = lhead, ltail = ltail)
+             color = color, style = style,
+             penwidth = penwidth, fontsize = 10, index = index,
+             lhead = lhead, ltail = ltail,
+             bidirectional = bidirectional)
 }
 
 
@@ -144,11 +164,15 @@ vast_implication <- function(from, to, strength = NULL, index = NULL,
 #' @return A list of class `vast_edge`.
 #' @export
 vast_causation <- function(from, to, strength = NULL, index = NULL,
-                          lhead = NULL, ltail = NULL, ...) {
+                          lhead = NULL, ltail = NULL,
+                          bidirectional = FALSE,
+                          color = "#C62828", style = "solid",
+                          penwidth = 1.5, ...) {
   .make_edge(from, to, type = "c", strength = strength,
-             color = "#C62828", style = "solid",
-             penwidth = 1.5, fontsize = 10, index = index,
-             lhead = lhead, ltail = ltail)
+             color = color, style = style,
+             penwidth = penwidth, fontsize = 10, index = index,
+             lhead = lhead, ltail = ltail,
+             bidirectional = bidirectional)
 }
 
 
@@ -163,11 +187,15 @@ vast_causation <- function(from, to, strength = NULL, index = NULL,
 #' @return A list of class `vast_edge`.
 #' @export
 vast_transformation <- function(from, to, strength = NULL, index = NULL,
-                               lhead = NULL, ltail = NULL, ...) {
+                               lhead = NULL, ltail = NULL,
+                               bidirectional = FALSE,
+                               color = "#6A1B9A", style = "solid",
+                               penwidth = 1.5, ...) {
   .make_edge(from, to, type = "t", strength = strength,
-             color = "#6A1B9A", style = "solid",
-             penwidth = 1.5, fontsize = 10, index = index,
-             lhead = lhead, ltail = ltail)
+             color = color, style = style,
+             penwidth = penwidth, fontsize = 10, index = index,
+             lhead = lhead, ltail = ltail,
+             bidirectional = bidirectional)
 }
 
 
@@ -182,11 +210,15 @@ vast_transformation <- function(from, to, strength = NULL, index = NULL,
 #' @return A list of class `vast_edge`.
 #' @export
 vast_prediction <- function(from, to, strength = NULL, index = NULL,
-                           lhead = NULL, ltail = NULL, ...) {
+                           lhead = NULL, ltail = NULL,
+                           bidirectional = FALSE,
+                           color = "#2E7D32", style = "solid",
+                           penwidth = 1.5, ...) {
   .make_edge(from, to, type = "p", strength = strength,
-             color = "#2E7D32", style = "solid",
-             penwidth = 1.5, fontsize = 10, index = index,
-             lhead = lhead, ltail = ltail)
+             color = color, style = style,
+             penwidth = penwidth, fontsize = 10, index = index,
+             lhead = lhead, ltail = ltail,
+             bidirectional = bidirectional)
 }
 
 
@@ -201,11 +233,15 @@ vast_prediction <- function(from, to, strength = NULL, index = NULL,
 #' @return A list of class `vast_edge`.
 #' @export
 vast_reasoning <- function(from, to, strength = NULL, index = NULL,
-                          lhead = NULL, ltail = NULL, ...) {
+                          lhead = NULL, ltail = NULL,
+                          bidirectional = FALSE,
+                          color = "#E65100", style = "solid",
+                          penwidth = 1.5, ...) {
   .make_edge(from, to, type = "r", strength = strength,
-             color = "#E65100", style = "solid",
-             penwidth = 1.5, fontsize = 10, index = index,
-             lhead = lhead, ltail = ltail)
+             color = color, style = style,
+             penwidth = penwidth, fontsize = 10, index = index,
+             lhead = lhead, ltail = ltail,
+             bidirectional = bidirectional)
 }
 
 
@@ -220,11 +256,15 @@ vast_reasoning <- function(from, to, strength = NULL, index = NULL,
 #' @return A list of class `vast_edge`.
 #' @export
 vast_unknown <- function(from, to, strength = NULL, index = NULL,
-                        lhead = NULL, ltail = NULL, ...) {
+                        lhead = NULL, ltail = NULL,
+                        bidirectional = FALSE,
+                        color = "gray50", style = "dashed",
+                        penwidth = 1.5, ...) {
   .make_edge(from, to, type = "u", strength = strength,
-             color = "gray50", style = "dashed",
-             penwidth = 1.5, fontsize = 10, index = index,
-             lhead = lhead, ltail = ltail)
+             color = color, style = style,
+             penwidth = penwidth, fontsize = 10, index = index,
+             lhead = lhead, ltail = ltail,
+             bidirectional = bidirectional)
 }
 
 

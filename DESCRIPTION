@@ -1,6 +1,6 @@
 Package: vastR
 Title: Visual Argument Structure Tool for R
-Version: 0.1.2
+Version: 0.2.0
 Authors@R: c(
     person("Luebber", "Finn", email = "f.luebber2@uni-luebeck.de",
            role = c("aut", "cre"),
